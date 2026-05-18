@@ -11,7 +11,16 @@
 - Docker Compose
 - AMD ROCm / ROCm PyTorch
 
-Dockerfile は既定で AMD ROCm PyTorch image を使います。PyTorch の ROCm build では AMD GPU でも device string は `cuda` なので、`compose.rocm.yaml` では `IRODORI_MODEL_DEVICE=cuda` と `IRODORI_CODEC_DEVICE=cuda` を設定しています。
+Dockerfile は既定で AMD ROCm PyTorch image を使います。PyTorch の ROCm build では AMD GPU でも device string は `cuda` なので、`compose.rocm.yaml` では生成モデル本体を `IRODORI_MODEL_DEVICE=cuda` で動かします。
+
+Ryzen AI Max+ 395 では、codec decode を ROCm GPU で動かすと `decode_latent` が非常に遅くなるケースがありました。このフォークでは実測に基づき、生成モデル本体は ROCm GPU、codec は CPU で動かす構成を標準にしています。
+
+```yaml
+IRODORI_MODEL_DEVICE: cuda
+IRODORI_MODEL_PRECISION: bf16
+IRODORI_CODEC_DEVICE: cpu
+IRODORI_CODEC_PRECISION: fp32
+```
 
 通常運用は次のコマンドを使います。
 
@@ -154,7 +163,7 @@ docker compose -f compose.yaml -f compose.rocm.yaml up -d
 
 The container uses `restart: unless-stopped`, so it is restarted automatically with Docker unless you stop it manually.
 
-PyTorch still uses the `cuda` device string on ROCm builds, so `compose.rocm.yaml` sets `IRODORI_MODEL_DEVICE=cuda` and `IRODORI_CODEC_DEVICE=cuda`.
+PyTorch still uses the `cuda` device string on ROCm builds, so `compose.rocm.yaml` sets `IRODORI_MODEL_DEVICE=cuda` for the main generation model. The codec is intentionally set to `IRODORI_CODEC_DEVICE=cpu` because codec decode was much faster on CPU than on ROCm GPU in Ryzen AI Max+ 395 testing.
 
 You can verify GPU visibility inside the running container with:
 
@@ -402,7 +411,7 @@ All environment variables use the `IRODORI_` prefix. Request fields override the
 | `IRODORI_CHECKPOINT` | unset | Local checkpoint path. Takes precedence over `IRODORI_HF_CHECKPOINT`. |
 | `IRODORI_CODEC_REPO` | `Aratako/Semantic-DACVAE-Japanese-32dim` | DACVAE codec repo or path. |
 | `IRODORI_MODEL_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. Use `cuda` for ROCm PyTorch too. |
-| `IRODORI_CODEC_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. Use `cuda` for ROCm PyTorch too. |
+| `IRODORI_CODEC_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. This fork uses `cpu` for Ryzen AI Max+ 395 because ROCm codec decode was slower in testing. |
 | `IRODORI_MODEL_PRECISION` | `fp32` | `fp32`, `fp16`, or `bf16`, depending on backend support. |
 | `IRODORI_CODEC_PRECISION` | `fp32` | `fp32`, `fp16`, or `bf16`, depending on backend support. |
 | `IRODORI_COMPILE_MODEL` | `false` | Enable `torch.compile` for core inference methods. Keep disabled when using dynamic LoRA adapters. |

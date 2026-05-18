@@ -14,7 +14,7 @@ services:
     shm_size: 8g
     environment:
       IRODORI_MODEL_DEVICE: cuda
-      IRODORI_CODEC_DEVICE: cuda
       IRODORI_MODEL_PRECISION: bf16
-      IRODORI_CODEC_PRECISION: bf16
+      IRODORI_CODEC_DEVICE: cpu
+      IRODORI_CODEC_PRECISION: fp32
       PYTORCH_ROCM_ARCH: gfx1151
