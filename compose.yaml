@@ -2,7 +2,7 @@ services:
   api:
     build: .
     image: irodori-openai-tts:local
-    command: ["/app/.venv/bin/python", "-m", "irodori_openai_tts"]
+    command: ["python", "-m", "irodori_openai_tts"]
     env_file:
       - .env
     ports:

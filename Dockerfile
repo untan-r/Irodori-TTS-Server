@@ -6,7 +6,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     UV_LINK_MODE=copy \
-    UV_PROJECT_ENVIRONMENT=/app/.venv \
     PYTORCH_ROCM_ARCH=gfx1151
 
 WORKDIR /app
@@ -20,17 +19,15 @@ RUN apt-get update \
         git \
         libsndfile1 \
         pkg-config \
-        python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-RUN python -m venv --system-site-packages /app/.venv
-
 COPY pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    uv sync --locked --no-dev --no-install-project \
+    UV_PROJECT_ENVIRONMENT="$(python -c 'import sysconfig; print(sysconfig.get_config_var("prefix"))')" \
+    uv sync --locked --inexact --no-dev --no-install-project \
         --no-install-package torch \
         --no-install-package torchaudio
 
@@ -38,10 +35,11 @@ COPY README.md LICENSE ./
 COPY src ./src
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    uv sync --locked --no-dev --no-editable \
+    UV_PROJECT_ENVIRONMENT="$(python -c 'import sysconfig; print(sysconfig.get_config_var("prefix"))')" \
+    uv sync --locked --inexact --no-dev --no-editable \
         --no-install-package torch \
         --no-install-package torchaudio
 
 EXPOSE 8088
 
-CMD ["/app/.venv/bin/python", "-m", "irodori_openai_tts"]
+CMD ["python", "-m", "irodori_openai_tts"]
