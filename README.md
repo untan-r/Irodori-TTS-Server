@@ -26,9 +26,9 @@ For local Python:
 For Docker:
 
 - Docker Engine with Docker Compose, or Docker Desktop
-- NVIDIA Container Toolkit or Docker Desktop GPU support for CUDA inference
+- AMD ROCm-capable Linux host for ROCm inference, or NVIDIA Container Toolkit / Docker Desktop GPU support for CUDA inference
 
-An NVIDIA GPU is recommended for practical inference.
+A GPU is recommended for practical inference.
 
 ## Installation
 
@@ -77,19 +77,48 @@ After that, start the existing image normally:
 docker compose up
 ```
 
-For NVIDIA GPU settings, build and recreate with both Compose files:
+The Dockerfile now defaults to a ROCm PyTorch base image. For NVIDIA CUDA settings, override the base image when building and use the CUDA Compose file:
 
 ```bash
-docker compose -f compose.yaml -f compose.gpu.yaml up --build --force-recreate
+docker compose -f compose.yaml -f compose.gpu.yaml build --build-arg BASE_IMAGE=python:3.10-slim
+docker compose -f compose.yaml -f compose.gpu.yaml up --force-recreate
 ```
 
-Then use this for normal GPU startup:
+Then use this for normal CUDA startup:
 
 ```bash
 docker compose -f compose.yaml -f compose.gpu.yaml up
 ```
 
 Reference voices placed in `./voices` are available inside the container. Downloaded Hugging Face files are kept in a Docker volume so they are reused across container recreations.
+
+### Docker on AMD ROCm
+
+The default Dockerfile uses AMD's ROCm PyTorch image for Ryzen AI Max+ 395 / Radeon 8060S (`gfx1151`):
+
+```text
+rocm/pytorch:rocm7.2.3_ubuntu24.04_py3.12_pytorch_release_2.9.1
+```
+
+On Linux hosts with ROCm and the AMD GPU driver installed, build and run with the ROCm Compose override:
+
+```bash
+docker compose -f compose.yaml -f compose.rocm.yaml up --build --force-recreate
+```
+
+Then use this for normal ROCm startup:
+
+```bash
+docker compose -f compose.yaml -f compose.rocm.yaml up
+```
+
+PyTorch still uses the `cuda` device string on ROCm builds, so `compose.rocm.yaml` sets `IRODORI_MODEL_DEVICE=cuda` and `IRODORI_CODEC_DEVICE=cuda`.
+
+You can verify GPU visibility inside the running container with:
+
+```bash
+docker compose -f compose.yaml -f compose.rocm.yaml exec api python -c "import torch; print(torch.version.hip); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+```
 
 ## Quick Usage
 
@@ -330,10 +359,10 @@ All environment variables use the `IRODORI_` prefix. Request fields override the
 | `IRODORI_HF_CHECKPOINT` | `Aratako/Irodori-TTS-500M-v3` | Hugging Face repo containing `model.safetensors`. |
 | `IRODORI_CHECKPOINT` | unset | Local checkpoint path. Takes precedence over `IRODORI_HF_CHECKPOINT`. |
 | `IRODORI_CODEC_REPO` | `Aratako/Semantic-DACVAE-Japanese-32dim` | DACVAE codec repo or path. |
-| `IRODORI_MODEL_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. |
-| `IRODORI_CODEC_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. |
-| `IRODORI_MODEL_PRECISION` | `fp32` | `fp32` or `bf16`. |
-| `IRODORI_CODEC_PRECISION` | `fp32` | `fp32` or `bf16`. |
+| `IRODORI_MODEL_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. Use `cuda` for ROCm PyTorch too. |
+| `IRODORI_CODEC_DEVICE` | `auto` | `auto`, `cuda`, `mps`, or `cpu`. Use `cuda` for ROCm PyTorch too. |
+| `IRODORI_MODEL_PRECISION` | `fp32` | `fp32`, `fp16`, or `bf16`, depending on backend support. |
+| `IRODORI_CODEC_PRECISION` | `fp32` | `fp32`, `fp16`, or `bf16`, depending on backend support. |
 | `IRODORI_COMPILE_MODEL` | `false` | Enable `torch.compile` for core inference methods. Keep disabled when using dynamic LoRA adapters. |
 | `IRODORI_COMPILE_DYNAMIC` | `false` | Use `dynamic=True` for `torch.compile`. |
 | `IRODORI_PRELOAD` | `false` | Load the model during startup. |

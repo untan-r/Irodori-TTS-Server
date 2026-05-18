@@ -1,0 +1,20 @@
+services:
+  api:
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    security_opt:
+      - seccomp=unconfined
+    cap_add:
+      - SYS_PTRACE
+    group_add:
+      - video
+      - render
+    ipc: host
+    shm_size: 8g
+    environment:
+      IRODORI_MODEL_DEVICE: cuda
+      IRODORI_CODEC_DEVICE: cuda
+      IRODORI_MODEL_PRECISION: fp16
+      IRODORI_CODEC_PRECISION: fp16
+      PYTORCH_ROCM_ARCH: gfx1151
