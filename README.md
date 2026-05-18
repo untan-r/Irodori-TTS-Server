@@ -1,5 +1,37 @@
 # Irodori OpenAI TTS Server
 
+## このフォークについて
+
+このフォークは、[Aratako/Irodori-TTS-Server](https://github.com/Aratako/Irodori-TTS-Server) を Ryzen AI Max+ 395 / Radeon 8060S 搭載マシンで ROCm を使って動かすために調整したものです。
+
+主な想定環境は以下です。
+
+- AMD Ryzen AI Max+ 395 / Radeon 8060S (`gfx1151`)
+- Linux ホスト
+- Docker Compose
+- AMD ROCm / ROCm PyTorch
+
+Dockerfile は既定で AMD ROCm PyTorch image を使います。PyTorch の ROCm build では AMD GPU でも device string は `cuda` なので、`compose.rocm.yaml` では `IRODORI_MODEL_DEVICE=cuda` と `IRODORI_CODEC_DEVICE=cuda` を設定しています。
+
+通常運用は次のコマンドを使います。
+
+```bash
+cp .env.example .env
+docker compose -f compose.yaml -f compose.rocm.yaml up -d --build
+```
+
+ログ確認:
+
+```bash
+docker compose -f compose.yaml -f compose.rocm.yaml logs -f api
+```
+
+ヘルスチェック:
+
+```bash
+curl http://localhost:8088/health
+```
+
 OpenAI Text-to-Speech API compatible server for [Irodori-TTS](https://github.com/Aratako/Irodori-TTS).
 
 This server targets the [Irodori-TTS 500M v3 base model](https://huggingface.co/Aratako/Irodori-TTS-500M-v3). It supports reference-audio voice cloning, OpenAI-style response formats, and automatic long text chunking.
@@ -117,8 +149,10 @@ docker compose -f compose.yaml -f compose.rocm.yaml up --build --force-recreate
 Then use this for normal ROCm startup:
 
 ```bash
-docker compose -f compose.yaml -f compose.rocm.yaml up
+docker compose -f compose.yaml -f compose.rocm.yaml up -d
 ```
+
+The container uses `restart: unless-stopped`, so it is restarted automatically with Docker unless you stop it manually.
 
 PyTorch still uses the `cuda` device string on ROCm builds, so `compose.rocm.yaml` sets `IRODORI_MODEL_DEVICE=cuda` and `IRODORI_CODEC_DEVICE=cuda`.
 

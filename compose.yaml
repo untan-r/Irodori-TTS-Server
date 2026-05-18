@@ -3,6 +3,7 @@ services:
     build: .
     image: irodori-openai-tts:local
     command: ["python", "-m", "irodori_openai_tts"]
+    restart: unless-stopped
     env_file:
       - .env
     ports:
