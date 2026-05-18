@@ -15,9 +15,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
+        cmake \
         ffmpeg \
         git \
         libsndfile1 \
+        pkg-config \
         python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
