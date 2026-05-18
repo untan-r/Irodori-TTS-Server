@@ -8,8 +8,8 @@ services:
     cap_add:
       - SYS_PTRACE
     group_add:
-      - video
-      - render
+      - "${IRODORI_VIDEO_GID:-44}"
+      - "${IRODORI_RENDER_GID:-993}"
     ipc: host
     shm_size: 8g
     environment:

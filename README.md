@@ -106,6 +106,14 @@ On Linux hosts with ROCm and the AMD GPU driver installed, build and run with th
 docker compose -f compose.yaml -f compose.rocm.yaml up --build --force-recreate
 ```
 
+If your host uses different group IDs for `/dev/kfd` or `/dev/dri`, set them before starting Compose:
+
+```bash
+IRODORI_VIDEO_GID=$(getent group video | cut -d: -f3) \
+IRODORI_RENDER_GID=$(getent group render | cut -d: -f3) \
+docker compose -f compose.yaml -f compose.rocm.yaml up --build --force-recreate
+```
+
 Then use this for normal ROCm startup:
 
 ```bash
