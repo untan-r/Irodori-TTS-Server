@@ -6,6 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     UV_LINK_MODE=copy \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
     PYTHONPATH=/app/src \
     PYTORCH_ROCM_ARCH=gfx1151
 
@@ -27,8 +29,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 COPY pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    UV_PROJECT_ENVIRONMENT="$(python -c 'import sysconfig; print(sysconfig.get_config_var("prefix"))')" \
-    uv sync --locked --inexact --no-dev --no-install-project \
+    uv sync --active --locked --inexact --no-dev --no-install-project \
         --no-install-package torch \
         --no-install-package torchaudio
 
@@ -36,8 +37,7 @@ COPY README.md LICENSE ./
 COPY src ./src
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    UV_PROJECT_ENVIRONMENT="$(python -c 'import sysconfig; print(sysconfig.get_config_var("prefix"))')" \
-    uv sync --locked --inexact --no-dev --no-editable \
+    uv sync --active --locked --inexact --no-dev --no-editable \
         --no-install-package torch \
         --no-install-package torchaudio
 
